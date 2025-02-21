@@ -1,0 +1,25 @@
+name: Sync Master with Upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Каждый день в 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: master # Работаем с веткой master
+
+      - name: Pull upstream changes
+        run: |
+          git remote add upstream https://github.com/lsfusion-solutions/mycompany.git
+          git fetch upstream
+          git checkout master
+          git rebase upstream/master
+          git push origin master --force
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

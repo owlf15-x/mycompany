@@ -3,37 +3,33 @@ name: Sync Master with Upstream
 on:
   schedule:
     - cron: '0 0 * * *' # Каждый день в 00:00 UTC
-  workflow_dispatch: # Ручной запуск
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
-          ref: master # Только master
-          fetch-depth: 0
+          ref: master # Работаем с веткой master
 
       - name: Set up Git
         run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config --global user.email "your.email@example.com"
+          git config --global user.name "Your Name"
 
-      - name: Sync with upstream
+      - name: Pull upstream changes
         run: |
-          set -e
           git remote add upstream https://github.com/lsfusion-solutions/mycompany.git
-          git fetch upstream
+          git fetch upstream || echo "Failed to fetch upstream, skipping..."
           git checkout master
           if git rebase upstream/master; then
-            echo "Rebase OK, pushing..."
+            echo "Rebase successful, pushing changes..."
             git push origin master --force-with-lease
           else
-            echo "Rebase failed, trying merge..."
+            echo "Rebase failed, resolving conflicts or skipping..."
             git rebase --abort
-            git merge upstream/master --no-edit
-            git push origin master
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

@@ -14,12 +14,22 @@ jobs:
         with:
           ref: master # Работаем с веткой master
 
+      - name: Set up Git
+        run: |
+          git config --global user.email "your.email@example.com"
+          git config --global user.name "Your Name"
+
       - name: Pull upstream changes
         run: |
           git remote add upstream https://github.com/lsfusion-solutions/mycompany.git
-          git fetch upstream
+          git fetch upstream || echo "Failed to fetch upstream, skipping..."
           git checkout master
-          git rebase upstream/master
-          git push origin master --force
+          if git rebase upstream/master; then
+            echo "Rebase successful, pushing changes..."
+            git push origin master --force-with-lease
+          else
+            echo "Rebase failed, resolving conflicts or skipping..."
+            git rebase --abort
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

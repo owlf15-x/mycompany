@@ -42,7 +42,7 @@ extraCheckAvailability (Shipment s) + {
         reserved(ShipmentLine l, Location loc) <- 
                 (PARTITION UNGROUP reserved
                            LIMIT   available(l, loc) IF level(loc, location(shipment(l)))
-                           ORDER dateReceived(l, loc), loc
+                           ORDER DESC available(l, loc), loc
                            BY l)                
                                 WHERE shipment(l) = s;
     }

@@ -4,7 +4,7 @@ META defineTaxCalc(doc, let, prefix, price)
     untaxedAmount '{Amount}'  = DATA NUMERIC[14,2] (###doc##Line);
     
     WHEN LOCAL CHANGED(quantity(###doc##Line l)) OR CHANGED(price(l)) DO {
-        untaxedAmount(l) <- NUMERIC[14,2](quantity(l) * price(l));
+        untaxedAmount(l) <- ROUND(NUMERIC[14,2](quantity(l) * price(l)), 1);
     }
     
     // taxes for line

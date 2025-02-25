@@ -52,9 +52,6 @@ newShipment (Invoice i) {
         
         fill(r, i);
 
-        precheckAvailability(r);
-        extraValidate(s);
-        
         FOR invoice(InvoiceLine l) = i AND item(l) IS Product INLINE NEW rl = ShipmentLine DO {            
             shipment(rl) <- r;
             product(rl) <- item(l);
@@ -67,6 +64,9 @@ newShipment (Invoice i) {
         }
         
         invoiceShipmentCreated() <- r;
+        
+        precheckAvailability(r);
+        extraValidate(r);
     }
 }
 

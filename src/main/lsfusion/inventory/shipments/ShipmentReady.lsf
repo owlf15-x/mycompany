@@ -26,7 +26,7 @@ available 'Available' (ShipmentLine l) = prevAvailableRec(location(shipment(l)),
 
 extraCheckAvailability ABSTRACT (Shipment);
 precheckAvailability (Shipment s) {
-    reserved(ShipmentLine l) <- max(min(initialDemand(l), available(l)), 0) WHERE shipment(l) = s;
+    reserved(ShipmentLine l) <- max(initialDemand(l), 0) WHERE shipment(l) = s;
     extraCheckAvailability(s);
     ready(s) <- reserved(s);
 }

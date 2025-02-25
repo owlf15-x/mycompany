@@ -1,0 +1,16 @@
+MODULE SumAddPOS;
+
+REQUIRE PosDashboard;
+
+EXTEND FORM posDashboard
+PROPERTIES(l) untaxedAmount
+;
+
+DESIGN posDashboard {
+    PROPERTY(quantity(l)) { charWidth = 5; } //5
+    PROPERTY(price(l)) { charWidth = 5; } //6
+    PROPERTY(nameSalesDiscount(l)) { charWidth = 6; } //8
+    PROPERTY(discountPrice(l)) { charWidth = 5; } //6
+    PROPERTY(untaxedAmount(l)) { charWidth = 5; } //6
+}
+DESIGN posDashboard { REMOVE PROPERTY(posDashboardPress0(l)); }

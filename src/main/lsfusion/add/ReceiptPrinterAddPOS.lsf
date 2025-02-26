@@ -2,17 +2,28 @@ MODULE ReceiptPrinterAddPOS;
 
 REQUIRE PosDashboardPayment;
 
-receipt_printer 'ЧЕК' () {
+receipt_printer 'ЧЕК' (Invoice i) {
+    APPLY;
+    EXPORT JSON FROM number = number(i), amount = amount(i);
+
+    LOCAL result = FILE();
+    EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;
+
+    LOCAL status = STRING[10]();
+    LOCAL message = STRING[100]();
+    IMPORT JSON FROM result() TO() status, message;
+    IF NOT status() == 'success' THEN {
+        MESSAGE 'Ошибка: ' + message();
+    }
     formOk();
-    MESSAGE 'Типа тут я отправил сбщ на принтер.';
 }
 
 EXTEND FORM posPayment
-    PROPERTIES receipt_printer() READONLYIF (change(i) < 0 OR notCashPaymentAmount() > amount(i)) AND paymentAmount()
+    PROPERTIES receipt_printer(i) READONLYIF (change(i) < 0 OR notCashPaymentAmount() > amount(i)) AND paymentAmount()
 ;
 
 DESIGN posPayment {
     TOOLBARRIGHT {
-        MOVE PROPERTY(receipt_printer()) { fontStyle = 'bold'; }
+        MOVE PROPERTY(receipt_printer(i)) { fontStyle = 'bold'; }
     }
 }

@@ -1,0 +1,18 @@
+MODULE ReceiptPrinterAddPOS;
+
+REQUIRE PosDashboardPayment;
+
+receipt_printer 'ЧЕК' () {
+    formOk();
+    MESSAGE 'Типа тут я отправил сбщ на принтер.';
+}
+
+EXTEND FORM posPayment
+    PROPERTIES receipt_printer() READONLYIF (change(i) < 0 OR notCashPaymentAmount() > amount(i)) AND paymentAmount()
+;
+
+DESIGN posPayment {
+    TOOLBARRIGHT {
+        MOVE PROPERTY(receipt_printer()) { fontStyle = 'bold'; }
+    }
+}

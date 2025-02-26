@@ -10,4 +10,4 @@ REQUIRE Eval, ProcessMonitor, Backup,
         Manufacturing,
         ProjectManagement,
         BillReceiptCost, BillReceiptCostService, // initialize after Purchase
-        SumAddPOS;
+        SumAddPOS, ReceiptPrinterAddPOS;

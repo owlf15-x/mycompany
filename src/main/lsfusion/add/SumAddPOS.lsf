@@ -3,7 +3,8 @@ MODULE SumAddPOS;
 REQUIRE PosDashboard;
 
 EXTEND FORM posDashboard
-PROPERTIES(l) untaxedAmount;
+    PROPERTIES(l) untaxedAmount
+;
 
 DESIGN posDashboard {
     PROPERTY(quantity(l)) { charWidth = 5; } //5

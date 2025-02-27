@@ -14,19 +14,22 @@ FORM exportOrder
 ;
 
 receipt_printer 'ЧЕК' (Invoice i) {
-    APPLY;
-    EXPORT exportOrder OBJECTS invoice = i JSON;
+    APPLY;        
+    TRY {
+        EXPORT exportOrder OBJECTS invoice = i JSON;
 
-    LOCAL result = FILE();
-    EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;
+        LOCAL result = FILE();
+        EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;
 
-    LOCAL status = STRING[10]();
-    LOCAL message = STRING[100]();
-    IMPORT JSON FROM result() TO() status, message;
-    IF NOT status() == 'success' THEN {
-        MESSAGE 'Ошибка: ' + message();
-    }
-    formOk();
+        LOCAL status = STRING[10]();
+        LOCAL message = STRING[100]();
+        IMPORT JSON FROM result() TO() status, message;
+        IF NOT status() == 'success' THEN {
+            MESSAGE 'Ошибка: ' + message();
+        }
+        
+    } CATCH MESSAGE 'Какая-то ошибка при печати чека.';
+      FINALLY formOk();
 }
 
 EXTEND FORM posPayment

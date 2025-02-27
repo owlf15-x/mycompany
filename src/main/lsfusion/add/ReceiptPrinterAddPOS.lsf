@@ -1,10 +1,21 @@
 MODULE ReceiptPrinterAddPOS;
 
-REQUIRE PosDashboardPayment;
+REQUIRE PosDashboardPayment,  PosDashboard;
+
+FORM exportOrder
+    OBJECTS  invoice = Invoice PANEL
+    PROPERTIES(invoice) READONLYIF readonly(invoice)
+        dateTime, number, amount
+    
+    OBJECTS detail = InvoiceLine
+    PROPERTIES(detail) READONLYIF readonly(invoice)
+        nameItem, quantity, price, untaxedAmount
+    FILTERS invoice(detail) = invoice
+;
 
 receipt_printer 'ЧЕК' (Invoice i) {
     APPLY;
-    EXPORT JSON FROM number = number(i), amount = amount(i);
+    EXPORT exportOrder OBJECTS invoice = i JSON;
 
     LOCAL result = FILE();
     EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;

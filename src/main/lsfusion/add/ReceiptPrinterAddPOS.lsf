@@ -14,7 +14,6 @@ FORM exportOrder
 ;
 
 receipt_printer 'ЧЕК' (Invoice i) {
-    APPLY;        
     TRY {
         EXPORT exportOrder OBJECTS invoice = i JSON;
 
@@ -27,17 +26,30 @@ receipt_printer 'ЧЕК' (Invoice i) {
         IF NOT status() == 'success' THEN {
             MESSAGE 'Ошибка: ' + message();
         }
-        
-    } CATCH MESSAGE 'Какая-то ошибка при печати чека.';
-      FINALLY formOk();
+    } CATCH {
+        MESSAGE 'Какая-то ошибка при печати чека.';
+    }
 }
 
+receipt_printer_pos 'ЧЕК' (Invoice i) {
+    TRY {
+        APPLY;
+        receipt_printer(i);
+    } FINALLY {
+        formOk();
+    }
+}
+
+EXTEND FORM posDashboard
+    PROPERTIES receipt_printer(si) TOOLBAR
+;
+
 EXTEND FORM posPayment
-    PROPERTIES receipt_printer(i) READONLYIF (change(i) < 0 OR notCashPaymentAmount() > amount(i)) AND paymentAmount()
+    PROPERTIES receipt_printer_pos(i) READONLYIF (change(i) < 0 OR notCashPaymentAmount() > amount(i)) AND paymentAmount()
 ;
 
 DESIGN posPayment {
     TOOLBARRIGHT {
-        MOVE PROPERTY(receipt_printer(i)) { fontStyle = 'bold'; }
+        MOVE PROPERTY(receipt_printer_pos(i)) { fontStyle = 'bold'; }
     }
 }

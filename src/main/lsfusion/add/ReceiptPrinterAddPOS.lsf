@@ -1,21 +1,50 @@
 MODULE ReceiptPrinterAddPOS;
 
-REQUIRE PosDashboardPayment,  PosDashboard;
+REQUIRE PosDashboardPayment,  PosDashboard, SalesOrder;
 
-FORM exportOrder
+FORM exportOrder 'Sales order'
+    OBJECTS order = Order PANEL
+    PROPERTIES(order) READONLY
+        dateTime, number, amount
+
+    OBJECTS detail = OrderLine
+    PROPERTIES(detail) READONLY
+        nameItem, quantity, price, untaxedAmount
+    FILTERS order(detail) = order
+;
+    
+FORM exportInvoice
     OBJECTS  invoice = Invoice PANEL
-    PROPERTIES(invoice) READONLYIF readonly(invoice)
+    PROPERTIES(invoice) READONLY
         dateTime, number, amount
     
     OBJECTS detail = InvoiceLine
-    PROPERTIES(detail) READONLYIF readonly(invoice)
+    PROPERTIES(detail) READONLY
         nameItem, quantity, price, untaxedAmount
     FILTERS invoice(detail) = invoice
 ;
 
+receipt_printer 'ЧЕК' (Order o) {
+    TRY {
+        EXPORT exportOrder OBJECTS order = o JSON;
+
+        LOCAL result = FILE();
+        EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;
+
+        LOCAL status = STRING[10]();
+        LOCAL message = STRING[100]();
+        IMPORT JSON FROM result() TO() status, message;
+        IF NOT status() == 'success' THEN {
+            MESSAGE 'Ошибка: ' + message();
+        }
+    } CATCH {
+        MESSAGE 'Какая-то ошибка при печати чека.';
+    }
+}
+
 receipt_printer 'ЧЕК' (Invoice i) {
     TRY {
-        EXPORT exportOrder OBJECTS invoice = i JSON;
+        EXPORT exportInvoice OBJECTS invoice = i JSON;
 
         LOCAL result = FILE();
         EXTERNAL HTTP 'http://localhost:5000/printer' PARAMS exportFile() TO result;
@@ -42,6 +71,10 @@ receipt_printer_pos 'ЧЕК' (Invoice i) {
 
 EXTEND FORM posDashboard
     PROPERTIES receipt_printer(si) TOOLBAR
+;
+
+EXTEND FORM order
+    PROPERTIES receipt_printer(o) DRAW l TOOLBAR
 ;
 
 EXTEND FORM posPayment

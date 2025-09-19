@@ -1,6 +1,6 @@
 MODULE MyCompany;
 
-REQUIRE Eval, ProcessMonitor, Backup,
+REQUIRE Eval, ProcessMonitor, Backup, Chat,
         MasterDataP,
         Inventory,
         Invoicing, InvoicingInventory,
@@ -9,5 +9,8 @@ REQUIRE Eval, ProcessMonitor, Backup,
         Retail,  
         Manufacturing,
         ProjectManagement,
-        BillReceiptCost, BillReceiptCostService, // initialize after Purchase
-        SumAddPOS, ReceiptPrinterAddPOS;
+        HumanResources,
+        CRM,
+        Fleet,
+        SumAddPOS, ReceiptPrinterAddPOS,
+        BillReceiptCost, BillReceiptCostService; // initialize after Purchase

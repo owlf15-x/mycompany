@@ -1,7 +1,7 @@
 MODULE ItemImageMobile;
 
 REQUIRE Input, Utils, Reflection, Security, Authentication,
-        ItemImage, CategoryMobile, BarCodeMobile, Mobile;
+        ItemImage, CategoryMobile, BarCodeMobile;
 
 NAMESPACE MasterData;
 
@@ -44,7 +44,13 @@ DESIGN itemImageLoad {
         NEW image {
             fill = 0.5;
             horizontal = TRUE;
-            MOVE PROPERTY(image(i)) { size = (100, 100); fill = 1; }
+            NEW imagePane {
+                fill = 1;
+                MOVE PROPERTY(image(i)) {
+                    size = (100, 100); 
+                    fill = 1; 
+                }
+            }
             NEW imageActions {
                 alignment = STRETCH;
                 MOVE PROPERTY(loadImageApply(i)) { fill = 1; }
@@ -63,9 +69,4 @@ NAVIGATOR {
     masterData {
         NEW itemImageLoad AFTER items;
     }
-}
-
-showMobileForms() + { 
-    IF permit(currentUser(), navigatorElementCanonicalName('MasterData.itemImageLoad')) THEN
-        SHOW itemImageLoad NOWAIT; 
 }

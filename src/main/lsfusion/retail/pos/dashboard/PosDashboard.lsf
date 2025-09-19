@@ -18,7 +18,7 @@ FORM posDashboard 'POS' LOCALASYNC
     
     OBJECTS i = Invoice PANEL
     PROPERTIES(i) 'Total' = fullAmount, 'Discount' = discountAmount, 'To pay' = amount, 
-                  nameCustomer
+                  nameCustomer, emailCustomer, phoneCustomer
     FILTERS session(i) = s
     
     OBJECTS l = InvoiceLine
@@ -34,7 +34,7 @@ FORM posDashboard 'POS' LOCALASYNC
     
     OBJECTS si = Invoice
     PROPERTIES(si) READONLY number, dateTime, nameCustomer, 'Total' = fullAmount, 'Discount' = discountAmount, 'To pay' = amount
-    PROPERTIES(si) NEWSESSION EDIT
+    PROPERTIES(si) NEWSESSION EDIT, DELETE SHOWIF NOT readonly(si)
     FILTERGROUP invoices
         FILTER 'By session' PREV(session(si)) = s DEFAULT
         FILTER 'By POS' PREV(pos(session(si))) = p
@@ -59,8 +59,11 @@ DESIGN posDashboard {
                     }
                     NEW invoice {
                         alignment = STRETCH;
+                        lines = 2;
                         horizontal = TRUE;
                         MOVE PROPERTY(nameCustomer(i)) { changeKey = 'F5'; }
+                        MOVE PROPERTY(phoneCustomer(i));
+                        MOVE PROPERTY(emailCustomer(i));
                     }
                     REMOVE BOX(l);
                     MOVE GRID(l) {
@@ -140,7 +143,7 @@ DESIGN posDashboard {
                         fill = 1;
                         tabbed = TRUE;
                         MOVE BOX(si) {
-                            caption = 'Checks'; 
+                            caption = 'Cash receipts'; 
                             showIf = openedSession(p); 
                             MOVE TOOLBAR(si) { alignment = END; }
                         }
@@ -154,10 +157,10 @@ DESIGN posDashboard {
 }
 
 setQuantity(InvoiceLine l, INTEGER n) {
-    IF n = 0 THEN
-        DELETE l;
-    ELSE
+    IF n != 0 THEN
         quantity(l) <- n;
+    ELSE
+        DELETE l;
 }
 
 DESIGN posDashboard {
@@ -184,7 +187,13 @@ createInvoice (Session s) {
 }
 
 EXTEND FORM posDashboard
-    EVENTS ON CHANGE s createInvoice(s);
+    EVENTS ON CHANGE s {
+        IF i AND s THEN session(i) <- s;
+        ELSE {
+            CANCEL;
+            createInvoice(s);
+        }
+    }
 ;
 
 NAVIGATOR {

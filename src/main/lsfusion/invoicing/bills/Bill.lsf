@@ -10,7 +10,7 @@ NAMESPACE Invoicing;
 
 CLASS Bill 'Bill';
 
-@defineDocStatus(bill, 'Bill');
+@defineDocStatus(bill, 'Bill status');
 
 // type
 type 'Type' = DATA BillType (Bill) NONULL;
@@ -26,6 +26,14 @@ WHEN LOCAL SET (Bill b IS Bill) AND NOT CHANGED(dateTime(b)) DO dateTime(b) <- c
 @defineNumberType(bill);
 
 numberDate 'Description' (Bill b) = number(b) + ' (' + dateTime(b) + ')' IN id;
+
+deliveryDateTime 'Delivery date' = DATA DATETIME (Bill);
+@defineDateTimeAggregation(Bill, delivery, 'Delivery ');
+
+executionDateTime 'Execution date' (Bill i) = ABSTRACT VALUE DATETIME (Bill);
+executionDateTime(Bill i) += deliveryDateTime(i);
+executionDateTime(Bill i) += dateTime(i);
+@defineDateTimeAggregation(Bill, execution, 'Execution ');
 
 // vendor
 vendor 'Vendor' = DATA Partner (Bill);
@@ -100,6 +108,12 @@ idBarCodeItem 'Barcode' (BillLine l) = idBarCode(item(l));
 idItem '{ID}' (BillLine l) = id(item(l));
 referenceItem 'Reference' (BillLine l) = reference(item(l));
 
+nameCategoryItem 'Category' (BillLine l) = nameCategory(item(l));
+level1Item 'Category 1' (BillLine l) = level1(item(l));
+level2Item 'Category 2' (BillLine l) = level2(item(l));
+level3Item 'Category 3' (BillLine l) = level3(item(l));
+level4Item 'Category 4' (BillLine l) = level4(item(l));
+
 countProductLines 'Number of lines with goods' (Bill b) = GROUP SUM 1 IF bill(BillLine l) = b AND item(l) IS Product;
 countServiceLine 'Number of lines with services' (Bill b) = GROUP SUM 1 IF b = bill(BillLine bl) AND item(bl) IS Service;
 
@@ -107,7 +121,7 @@ items '{Items}' (Bill b) = GROUP CONCAT nameItem(BillLine l) IF bill(l) = b, ','
 
 CONSTRAINT item(BillLine l) AND NOT canBePurchased(item(l))
             CHECKED BY item 
-            MESSAGE 'The item is not intended for purchase';
+            MESSAGE 'The item is not for purchase';
 
 uom (BillLine l) = uom(item(l));
 nameUom 'UoM' (BillLine l) = name(uom(l));
@@ -151,7 +165,7 @@ edit (BillLine l) + { edit(bill(l)); }
 FORM bill 'Bill'
     OBJECTS  b = Bill PANEL 
     PROPERTIES(b) READONLYIF readonly(b)
-                  nameType, dateTime, number, 
+                  nameType, dateTime, deliveryDateTime, number, 
                   nameVendor, nameCompany,
                   namePaymentTerms, dueDateTime, nameVendorAccount, nameCompanyAccount,
                   nameRepresentative, vendorReference, note,
@@ -174,7 +188,11 @@ DESIGN bill {
             horizontal = TRUE;
             NEW headerLeft {
                 MOVE PROPERTY(nameType(b)) { notNull = TRUE; }
-                MOVE PROPERTY(dateTime(b));
+                NEW dates {
+                    horizontal = TRUE;
+                    MOVE PROPERTY(dateTime(b));
+                    MOVE PROPERTY(deliveryDateTime(b));
+                }
                 MOVE PROPERTY(number(b));
             }
             NEW headerRight {
@@ -237,10 +255,6 @@ DESIGN bill {
     }
 }
 
-@defineDocHistory(bill, b, item);
-@defineDocHistoryLineProperty(bill, BillLine, quantity, 'Qty', nameItem);
-@defineDocHistoryLineProperty(bill, BillLine, untaxedAmount, '{Amount}', nameItem);
-
 @defineDocSearch(bill, item, quantity, 'Quantity', b, canBePurchased);
 @defineBarCodeSearch(bill, b, l, quantity);
 
@@ -248,9 +262,9 @@ background = ABSTRACT CASE COLOR (Bill);
 FORM bills 'Bills'
     OBJECTS b = Bill BACKGROUND background(b)
     PROPERTIES(b) READONLYIF isReadonly()
-                           number, dateTime, nameVendor,
+                           number, dateTime, deliveryDateTime, nameVendor,
                            nameType, nameCompany,
-                           namePaymentTerms, dueDateTime, nameVendorAccount, nameCompanyAccount,
+                               namePaymentTerms, dueDateTime, nameVendorAccount, nameCompanyAccount,
                            vendorReference, note
     PROPERTIES(b) NEWSESSION NEW, EDIT, DELETE
            
@@ -259,10 +273,16 @@ FORM bills 'Bills'
 
 @extendFormEditable(bills);
 
+@defineDocHistory(bill, b, item);
+@defineDocHistoryLineProperty(bill, BillLine, quantity, 'Qty', nameItem);
+@defineDocHistoryLineProperty(bill, BillLine, untaxedAmount, '{Amount}', nameItem);
+
 @defineDocObjectsForm(bills, b, 'Bills');
 @defineDocTaxForm(bill, b);
 @defineDocStatusForm(bill, b);
 @defineDocLinesCount(bill, b);
+
+@defineObjectComments(bill, b, details);
 
 @defineObjectFiles(bill, b, 'Bill file');
 

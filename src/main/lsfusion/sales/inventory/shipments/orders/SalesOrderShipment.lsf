@@ -1,7 +1,7 @@
 MODULE SalesOrderShipment;
 
 REQUIRE SalesOrder, SalesOrderConfirmed, SalesOrderCanceled, SalesOrderLocked,
-        ShipmentCanceled;
+        ShipmentCanceled, ProductSku;
 
 NAMESPACE Sales;
 
@@ -12,6 +12,9 @@ EXTEND FORM orderType PROPERTIES nameShipmentType(o);
  
 // relation
 @defineDocLineRelation(order, shipment, '{Order}', 'Shipment', o, s);
+
+priceOrder 'Price' (ShipmentLine l) = price(orderLine(l));
+discountPriceOrder 'Discount price' (ShipmentLine l) = discountPrice(orderLine(l));
 
 reserved 'Reserved' (OrderLine ol) = 
     GROUP SUM reserved(ShipmentLine rl) IF orderLine(rl) = ol AND toReserve(shipment(rl));
@@ -61,10 +64,10 @@ WHEN ([GROUP SUM 1 IF CHANGED(toShip(OrderLine l)) BY order(l)](Order o) OR SET(
         NOT (GROUP SUM 1 IF shipment(ShipmentLine l) = reserveShipment(o) AND orderLine(l) = ol) 
             NEW sl = ShipmentLine DO {            
         shipment(sl) <- reserveShipment(o);
-        product(sl) <- item(ol);
+        product(sl) <- sku(item(ol));
         orderLine(sl) <- ol;
     }
-    initialDemand(ShipmentLine l) <- toShip(orderLine(l)) IF toShip(orderLine(l)) > 0 WHERE shipment(l) = reserveShipment(o);  
+    initialDemand(ShipmentLine l) <- NUMERIC[16,3](toShip(orderLine(l)) * skuCoeff(product(l))) IF toShip(orderLine(l)) > 0 WHERE shipment(l) = reserveShipment(o);  
     DELETE ShipmentLine l WHERE shipment(l) = reserveShipment(o) AND NOT initialDemand(l);
     IF NOT countLines(reserveShipment(o)) THEN
         DELETE Shipment s WHERE s = reserveShipment(o); 
@@ -72,9 +75,15 @@ WHEN ([GROUP SUM 1 IF CHANGED(toShip(OrderLine l)) BY order(l)](Order o) OR SET(
     precheckAvailability(reserveShipment(o));
 }
 
-WHEN SET(locked(Order o)) DO {
+forbidLockActiveShipments 'Forbid to lock orders with active shipments' = DATA BOOLEAN (OrderType);
+EXTEND FORM orderType PROPERTIES(o) forbidLockActiveShipments;
+
+WHEN SET(locked(Order o)) AND NOT forbidLockActiveShipments(type(o)) DO {
     DELETE Shipment s WHERE s = reserveShipment(o) AND toReserve(s);
 }
+
+CONSTRAINT SET(locked(Order o)) AND toReserve(reserveShipment(o)) AND forbidLockActiveShipments(type(o))
+    MESSAGE 'It is forbidden to lock orders with active shipments';
 
 overShipPartially (ShipmentLine to, ShipmentLine from) +{
     orderLine(to) <- orderLine(from);

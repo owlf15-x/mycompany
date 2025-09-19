@@ -10,26 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Обнови до v4, она стабильнее
         with:
-          ref: master # Работаем с веткой master
+          ref: main # Замени на нужную ветку (main или master)
+          fetch-depth: 0 # Полная история для ребейза
 
       - name: Set up Git
         run: |
-          git config --global user.email "your.email@example.com"
-          git config --global user.name "Your Name"
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
 
-      - name: Pull upstream changes
+      - name: Sync with upstream
         run: |
+          set -e # Останавливай при ошибке
           git remote add upstream https://github.com/lsfusion-solutions/mycompany.git
-          git fetch upstream || echo "Failed to fetch upstream, skipping..."
-          git checkout master
-          if git rebase upstream/master; then
-            echo "Rebase successful, pushing changes..."
-            git push origin master --force-with-lease
+          git fetch upstream
+          git checkout main # Замени на нужную ветку
+          if git rebase upstream/main; then
+            echo "Rebase OK, pushing..."
+            git push origin main --force-with-lease
           else
-            echo "Rebase failed, resolving conflicts or skipping..."
+            echo "Rebase failed, trying merge..."
             git rebase --abort
+            git merge upstream/main --no-edit
+            git push origin main
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

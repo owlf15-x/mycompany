@@ -3,17 +3,17 @@ name: Sync Master with Upstream
 on:
   schedule:
     - cron: '0 0 * * *' # Каждый день в 00:00 UTC
-  workflow_dispatch:
+  workflow_dispatch: # Ручной запуск
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Обнови до v4, она стабильнее
+        uses: actions/checkout@v4
         with:
-          ref: main # Замени на нужную ветку (main или master)
-          fetch-depth: 0 # Полная история для ребейза
+          ref: master # Только master
+          fetch-depth: 0
 
       - name: Set up Git
         run: |
@@ -22,18 +22,18 @@ jobs:
 
       - name: Sync with upstream
         run: |
-          set -e # Останавливай при ошибке
+          set -e
           git remote add upstream https://github.com/lsfusion-solutions/mycompany.git
           git fetch upstream
-          git checkout main # Замени на нужную ветку
-          if git rebase upstream/main; then
+          git checkout master
+          if git rebase upstream/master; then
             echo "Rebase OK, pushing..."
-            git push origin main --force-with-lease
+            git push origin master --force-with-lease
           else
             echo "Rebase failed, trying merge..."
             git rebase --abort
-            git merge upstream/main --no-edit
-            git push origin main
+            git merge upstream/master --no-edit
+            git push origin master
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
